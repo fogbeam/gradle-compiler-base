@@ -1,0 +1,3 @@
+[submodule "mirah"]
+	path = mirah
+	url = git://github.com/mirah/mirah.git
