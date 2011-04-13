@@ -1,0 +1,43 @@
+apply plugin:'groovy'
+apply plugin:'maven'
+
+version = '0.0.1-SNAPSHOT'
+
+configurations {
+	deployerJars
+}
+
+
+if(!System.getenv().get('GRADLE_HOME')) throw new Exception('Please set $GRADLE_HOME')
+
+repositories {
+  mavenCentral()
+  mavenRepo urls:'http://repo.smokejumperit.com'
+}
+dependencies {
+  groovy 'org.codehaus.groovy:groovy:1.8.0-rc-3'
+  deployerJars "org.apache.maven.wagon:wagon-ssh:1.0-beta-6" 
+  compile fileTree(
+    dir:System.getenv().get('GRADLE_HOME'),
+    includes:['**/*.jar']
+  )
+}
+
+uploadArchives { 
+  repositories.mavenDeployer {
+    def repoUser = System.properties['sjit.repo.user']
+    configuration = configurations.deployerJars
+    repository(url: "scp://repo.smokejumperit.com/home/$repoUser/repo.smokejumperit.com/") {
+      authentication(
+        userName: repoUser,
+        privateKey: new File(System.properties['sjit.repo.keyFile']).absolutePath, 
+        passphrase: System.properties['sjit.repo.passphrase']
+      )
+      pom {
+        groupId='com.smokejumperit'
+        artifactId='mirah-gradle-plugin'
+        version= project.version
+      }
+    }
+  } 
+} 
