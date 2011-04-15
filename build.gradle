@@ -6,11 +6,13 @@ version = '0.0.1-SNAPSHOT'
 
 configurations {
 	deployerJars
+	mirah
 }
 
 if(!System.getenv().get('GRADLE_HOME')) throw new Exception('Please set $GRADLE_HOME')
 
 repositories {
+	mavenLocal()
   mavenCentral()
   mavenRepo urls:'http://repo.smokejumperit.com'
 }
@@ -21,10 +23,16 @@ dependencies {
     dir:System.getenv().get('GRADLE_HOME'),
     includes:['**/*.jar']
   )
-  compile fileTree(
+  mirah fileTree(
     dir:new File(project.projectDir, "lib"),
-    includes:['**/*.jar']
+    includes:['**/mirah*.jar']
 	)
+}
+configurations.compile.extendsFrom(configurations.mirah)
+
+jar {
+	dependsOn configurations.mirah
+	from { configurations.mirah.collect { it.isDirectory() ? it : zipTree(it) } }
 }
 
 uploadArchives { 

@@ -73,9 +73,8 @@ public abstract class CompilerPlugin implements Plugin<Project> {
 		project.plugins.apply(JavaPlugin.class)
 		JavaBasePlugin javaPlugin = project.plugins.apply(JavaBasePlugin.class)
 
-		configureSourceSetDefaults(project, javaPlugin)
+		configureSourceSetsDefaults(project, javaPlugin)
 		if(hasDoc()) addDocTask(project)
-		configureCompileDefaults(project)
 		configureCompilerConfigurations(project)
 	}
 
@@ -98,9 +97,9 @@ public abstract class CompilerPlugin implements Plugin<Project> {
 	}
 
 	protected void configureSourceSetDefaults(SourceSet sourceSet, Project project, JavaBasePlugin javaPlugin) {
-		String name = getName()
-		sourceSet.convention.plugins."${name}" = getSourceSetConvention(sourceSet.displayName, project.fileResolver)
+		applySourceSetConvention(sourceSet.displayName, project.fileResolver, sourceSet)
 
+		String name = getName()
 		def mySource = sourceSet."${name}"
 		mySource.srcDir { project.file("src/${sourceSet.name}/${name}") }
 		
@@ -139,32 +138,33 @@ public abstract class CompilerPlugin implements Plugin<Project> {
 	protected void configureCompilerConfiguration(Configuration config, /*AbstractDoc*/ docTask, Project project) {
 		docTask.conventionMapping.destinationDir = { project.file("${project.docsDir}/${getName()}Doc") }
 		docTask.conventionMapping.title = { project.apiDocTitle }
-		docTask.localClasspath = config
+		docTask.classpath.add(config)
 	}
 
 	protected void configureCompilerConfiguration(Configuration config, AbstractCompile compileTask, Project project) {
-		compileTask.localClasspath = config
+		compileTask.classpath.add(config)
 	}
 			
 	/**
-	* Provides an instance of the source set convention.
+	* Applies the source set convention to the source set
 	*/
-	protected def getSourceSetConvention(String displayName, FileResolver resolver) {
+	protected def applySourceSetConvention(String displayName, FileResolver resolver, SourceSet sourceSet) {
 		String name = getName()
 		String capitalName = "${name[0].toUpperCase()}${name[1..-1]}"
 
-		def langSuffixes = (getLanguageFileSuffixes ?: [])
-		PatternFilterable langPatterns = new PatternSet()
-		langPatterns.include(langSuffixes.map { "**/*.${it}" })
-		UnionFileTree allFiles = new UnionFileTree("$displayName $capitalName source", files.matching(langPatterns))
-
+		def langSuffixes = (languageFileSuffixes ?: [])
 		def allSuffixes = []
 		allSuffixes.addAll(langSuffixes)
 		allSuffixes.addAll(getAdditionalConsumedFileSuffixes() ?: [])
+
 		DefaultSourceDirectorySet files = new DefaultSourceDirectorySet("$displayName $capitalName source", resolver)
-		files.filter.include(allSuffixes.map { "**/*.${it}" })
-		
-		def convention = new Object() 
+		files.filter.include(allSuffixes.collect { "**/*.${it}" })
+
+		PatternFilterable langPatterns = new PatternSet()
+		langPatterns.include(langSuffixes.collect { "**/*.${it}" })
+		UnionFileTree allFiles = new UnionFileTree("$displayName $capitalName source", files.matching(langPatterns))
+
+		def convention = sourceSet
 		
 		convention.metaClass."get${capitalName}" = {->
 			return files

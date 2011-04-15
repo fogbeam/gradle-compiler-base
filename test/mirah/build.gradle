@@ -1,0 +1,22 @@
+apply plugin:com.smokejumperit.gradle.MirahPlugin
+
+import org.gradle.api.tasks.JavaExec
+
+buildscript {
+  repositories {
+		mavenLocal()
+		mavenCentral()
+    mavenRepo(urls:'http://repo.smokejumperit.com').setSnapshotTimeout(0)
+  }
+  dependencies {
+    classpath 'com.smokejumperit.gradle:compiler-plugins:0.0.1-SNAPSHOT'
+  }
+}
+
+task exec(type:JavaExec, dependsOn:tasks.jar) {
+	classpath = files(tasks.jar.archivePath)
+	ignoreExitValue = false
+	main = "example.HelloWorld"
+	standardError = System.err
+	standardOutput = System.out
+}
