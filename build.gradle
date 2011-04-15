@@ -2,11 +2,10 @@ apply plugin:'java'
 apply plugin:'groovy'
 apply plugin:'maven'
 
-version = '0.0.1-SNAPSHOT'
+version = '0.0.2'
 
 configurations {
 	deployerJars
-	mirah
 }
 
 if(!System.getenv().get('GRADLE_HOME')) throw new Exception('Please set $GRADLE_HOME')
@@ -14,7 +13,6 @@ if(!System.getenv().get('GRADLE_HOME')) throw new Exception('Please set $GRADLE_
 repositories {
 	mavenLocal()
   mavenCentral()
-  mavenRepo urls:'http://repo.smokejumperit.com'
 }
 dependencies {
   groovy 'org.codehaus.groovy:groovy:1.8.0-rc-3'
@@ -23,16 +21,6 @@ dependencies {
     dir:System.getenv().get('GRADLE_HOME'),
     includes:['**/*.jar']
   )
-  mirah fileTree(
-    dir:new File(project.projectDir, "lib"),
-    includes:['**/mirah*.jar']
-	)
-}
-configurations.compile.extendsFrom(configurations.mirah)
-
-jar {
-	dependsOn configurations.mirah
-	from { configurations.mirah.collect { it.isDirectory() ? it : zipTree(it) } }
 }
 
 uploadArchives { 
@@ -46,8 +34,8 @@ uploadArchives {
         passphrase: System.properties['sjit.repo.passphrase']
       )
       pom {
-        groupId='com.smokejumperit.gradle'
-        artifactId='compiler-plugins'
+        groupId='com.smokejumperit.gradle.compiler'
+        artifactId='base'
         version= project.version
       }
     }
