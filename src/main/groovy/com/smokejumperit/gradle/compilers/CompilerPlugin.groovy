@@ -3,6 +3,7 @@ package com.smokejumperit.gradle.compilers;
 import org.gradle.api.tasks.compile.AbstractCompile
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.Task
 import org.gradle.api.file.FileTreeElement
 import org.gradle.api.internal.file.FileResolver
 import org.gradle.api.internal.file.SourceDirectorySet
@@ -10,6 +11,7 @@ import org.gradle.api.plugins.JavaBasePlugin
 import org.gradle.api.plugins.JavaPlugin
 import org.gradle.api.plugins.JavaPluginConvention
 import org.gradle.api.tasks.SourceSet
+import org.gradle.api.tasks.SourceTask
 import org.gradle.api.file.FileTree;
 import org.gradle.api.file.SourceDirectorySet;
 import org.gradle.api.internal.file.DefaultSourceDirectorySet;
@@ -22,7 +24,8 @@ import org.gradle.util.ConfigureUtil;
 import org.gradle.api.artifacts.Configuration
 
 
-public abstract class CompilerPlugin implements Plugin<Project> {
+
+public abstract class CompilerPlugin<COMPILE_TYPE extends AbstractCompile> implements Plugin<Project> {
 
 	/**
 	* The file suffixes specific to the language of this compiler. 
@@ -44,12 +47,7 @@ public abstract class CompilerPlugin implements Plugin<Project> {
 	/**
 	* Provides the compile task class for this compiler.
 	*/
-	protected abstract <X extends AbstractCompile> Class<X> getCompileTaskClass();
-
-	/**
-	* Provides the documentation class task name. May be <code>null</code> if there is no documentation class.
-	*/
-	protected abstract <X/* extends AbstractDoc*/> Class<X> getDocTaskClass();
+	protected abstract Class<COMPILE_TYPE> getCompileTaskClass();
 
 	/**
 	* Extra configurations to be added to the compiler classpath. Return <code>null</code> or an empty list if none.
@@ -57,46 +55,43 @@ public abstract class CompilerPlugin implements Plugin<Project> {
 	protected abstract Collection<String> getCompileConfigurationNames();
 
 	/**
-	* Method to override if you want to configure the doc task for a given project.
+	* Method to override if you want to do some post-processing configuration.
 	*/
-	protected void configureDoc(/*AbstractDoc*/ doc, Project project) {}
-
-	/**
-	* Whether or not there is a documentation class that goes with this compiler. Checks if {@link #getDocTaskClass()} is 
-	* not <code>null</code>.
-	*/
-	public final boolean hasDoc() {
-		return getDocTaskClass() != null
-	}
+	protected void postConfig(COMPILE_TYPE  task, SourceSet set, Project project) {}
 
 	public void apply(Project project) {
 		project.plugins.apply(JavaPlugin.class)
 		JavaBasePlugin javaPlugin = project.plugins.apply(JavaBasePlugin.class)
 
 		configureSourceSetsDefaults(project, javaPlugin)
-		if(hasDoc()) addDocTask(project)
+		//addDocTask(project)
 		configureCompilerConfigurations(project)
 	}
 
+/*
 	protected void addDocTask(Project project) {
-		project.tasks.withType(getDocTaskClass()) { /*AbstractDoc*/ doc ->
-			doc.conventionMapping.classpath = { project.sourceSets.main.classes + project.sourceSets.main.compileClasspath }
-			doc.conventionMapping.defaultSource = { project.sourceSets.main."${getName()}" }
-			configureDoc(doc, project)
+		if(hasDoc()) {
+			project.tasks.withType(getDocTaskClass()) { DOC_TYPE doc ->
+				doc.conventionMapping.classpath = { project.sourceSets.main.classes + project.sourceSets.main.compileClasspath }
+				doc.conventionMapping.defaultSource = { project.sourceSets.main."${getName()}" }
+				configureDoc(doc, project)
+			}
+			DOC_TYPE doc = project.tasks.add("${getName()}doc", getDocTaskClass())
+			doc.description = "Generates the ${getName()} doc for the main source code"
+			doc.group = JavaBasePlugin.DOCUMENTATION_GROUP
 		}
-		def /*AbstractDoc*/ doc = project.tasks.add("${getName()}doc", getDocTaskClass())
-		doc.description = "Generates the ${getName()} doc for the main source code"
-		doc.group = JavaBasePlugin.DOCUMENTATION_GROUP
 	}
+*/
 
 	protected void configureSourceSetsDefaults(Project project, JavaBasePlugin javaPlugin) {
 		String name = getName();
 		project.convention.getPlugin(JavaPluginConvention.class).sourceSets.all { SourceSet sourceSet ->
-			configureSourceSetDefaults(sourceSet, project, javaPlugin)
+			COMPILE_TYPE t = configureSourceSetDefaults(sourceSet, project, javaPlugin)
+			postConfig(t, sourceSet, project)
 		}
 	}
 
-	protected void configureSourceSetDefaults(SourceSet sourceSet, Project project, JavaBasePlugin javaPlugin) {
+	protected COMPILE_TYPE configureSourceSetDefaults(SourceSet sourceSet, Project project, JavaBasePlugin javaPlugin) {
 		applySourceSetConvention(sourceSet.displayName, project.fileResolver, sourceSet)
 
 		String name = getName()
@@ -108,12 +103,13 @@ public abstract class CompilerPlugin implements Plugin<Project> {
 		sourceSet.resources.filter.exclude { FileTreeElement element -> mySource.contains(element.file) }
 		
 		String taskName = sourceSet.getCompileTaskName(name)
-		AbstractCompile compileTask = project.tasks.add(taskName, getCompileTaskClass())
-		compileTask.dependsOn sourceSet.compileJavaTaskName
+		COMPILE_TYPE compileTask = project.tasks.add(taskName, getCompileTaskClass())
 		javaPlugin.configureForSourceSet(sourceSet, compileTask);
 		compileTask.description = "Compiles the ${sourceSet.name} ${name} files.";
     compileTask.conventionMapping.defaultSource = { mySource }
 		project.tasks[sourceSet.classesTaskName].dependsOn(taskName)
+
+		return compileTask
 	}
 
 	protected void configureCompilerConfigurations(Project project) {
@@ -124,24 +120,29 @@ public abstract class CompilerPlugin implements Plugin<Project> {
 	}
 
 	protected void configureCompilerConfiguration(Configuration config, Project project) {
-		project.tasks.withType(getCompileTaskClass()) { AbstractCompile compile ->
+		project.tasks.withType(getCompileTaskClass()) { COMPILE_TYPE compile ->
 			configureCompilerConfiguration(config, compile, project)
 		}
 
+/*
 		if(hasDoc()) {
-			project.tasks.withType(getDocTaskClass()) { /*AbstractDoc*/ doc ->
+			project.tasks.withType(getDocTaskClass()) { DOC_TYPE doc ->
 				configureCompilerConfiguration(config, doc, project)
 			}
 		}
+*/
 	}
 
-	protected void configureCompilerConfiguration(Configuration config, /*AbstractDoc*/ docTask, Project project) {
+/*
+	protected void configureCompilerConfiguration(Configuration config, DOC_TYPE docTask, Project project) {
 		docTask.conventionMapping.destinationDir = { project.file("${project.docsDir}/${getName()}Doc") }
 		docTask.conventionMapping.title = { project.apiDocTitle }
 		docTask.classpath.add(config)
 	}
+*/
 
-	protected void configureCompilerConfiguration(Configuration config, AbstractCompile compileTask, Project project) {
+	protected void configureCompilerConfiguration(Configuration config, COMPILE_TYPE compileTask, Project project) {
+		project.logger.info("Adding configuration " + config + " to the " + compileTask + " classpath")
 		compileTask.classpath.add(config)
 	}
 			
@@ -185,4 +186,5 @@ public abstract class CompilerPlugin implements Plugin<Project> {
 
 		return convention
 	}
+
 }
