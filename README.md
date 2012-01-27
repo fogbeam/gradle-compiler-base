@@ -9,6 +9,17 @@ figure out how this plugin works.  If you need help figuring it out or would lik
 * [Mirah](http://github.com/RobertFischer/Gradle-Mirah-Compiler)
 * [JavaCC/JJTree](http://github.com/RobertFischer/Gradle-Javacc-Plugin) 
 
+## Installation
+
+Add the following lines to your plugins' `build.gradle` script:
+
+		repositories {
+			mavenRepo url:'http://repo.smokejumperit.com'
+		}
+		dependencies {
+			classpath 'com.smokejumperit.gradle.compiler:base:0.0.4'
+		}
+
 ## Changelog
 
 ### 0.0.4
