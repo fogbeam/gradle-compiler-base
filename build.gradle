@@ -2,10 +2,10 @@ apply plugin:'java'
 apply plugin:'groovy'
 apply plugin:'maven'
 
-version = '0.0.3'
+version = '0.0.4'
 
-sourceCompatibility = 5
-targetCompatibility = 5
+sourceCompatibility = 6
+targetCompatibility = 6
 
 if(!System.getenv().get('GRADLE_HOME')) throw new Exception('Please set $GRADLE_HOME')
 
@@ -18,7 +18,7 @@ repositories {
   mavenCentral()
 }
 dependencies {
-  groovy 'org.codehaus.groovy:groovy:1.8.0'
+  groovy 'org.codehaus.groovy:groovy:1.8.5'
   deployerJars "org.apache.maven.wagon:wagon-ssh:1.0-beta-6" 
   compile fileTree(
     dir:System.getenv().get('GRADLE_HOME'),

@@ -97,9 +97,10 @@ public abstract class CompilerPlugin<COMPILE_TYPE extends AbstractCompile> imple
 		String name = getName()
 		def mySource = sourceSet."${name}"
 		mySource.srcDir { project.file("src/${sourceSet.name}/${name}") }
-		
-		sourceSet.allJava.add(mySource.matching(sourceSet.java.filter))
-		sourceSet.allSource.add(mySource)
+	
+		sourceSet.allJava.source( mySource /*.matching(sourceSet.java.filter)*/ )
+		sourceSet.allJava.filter.exclude { FileTreeElement element -> mySource.contains(element.file) }
+		sourceSet.allSource.source( mySource )
 		sourceSet.resources.filter.exclude { FileTreeElement element -> mySource.contains(element.file) }
 		
 		String taskName = sourceSet.getCompileTaskName(name)
