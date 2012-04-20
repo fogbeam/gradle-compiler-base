@@ -2,45 +2,21 @@ apply plugin:'java'
 apply plugin:'groovy'
 apply plugin:'maven'
 
+group = 'RobertFischer'
 version = '0.0.4'
 
-sourceCompatibility = 6
-targetCompatibility = 6
+apply from:'http://smokejumperit.com/repo.gradle'
+apply from:'http://smokejumperit.com/github-dev.gradle'
 
-if(!System.getenv().get('GRADLE_HOME')) throw new Exception('Please set $GRADLE_HOME')
-
-configurations {
-	deployerJars
-}
+sourceCompatibility = 7
+targetCompatibility = 7
 
 repositories {
 	mavenLocal()
   mavenCentral()
 }
 dependencies {
-  groovy 'org.codehaus.groovy:groovy:1.8.5'
-  deployerJars "org.apache.maven.wagon:wagon-ssh:1.0-beta-6" 
-  compile fileTree(
-    dir:System.getenv().get('GRADLE_HOME'),
-    includes:['**/*.jar']
-  )
+  groovy localGroovy()
+  compile gradleApi()
 }
 
-uploadArchives { 
-  repositories.mavenDeployer {
-    def repoUser = System.properties['sjit.repo.user']
-    configuration = configurations.deployerJars
-    repository(url: "scp://repo.smokejumperit.com/home/$repoUser/repo.smokejumperit.com/") {
-      authentication(
-        userName: repoUser,
-        privateKey: System.properties['sjit.repo.keyFile'],
-        passphrase: System.properties['sjit.repo.passphrase']
-      )
-      pom {
-        groupId='com.smokejumperit.gradle.compiler'
-        artifactId='base'
-        version= project.version
-      }
-    }
-  } 
-} 

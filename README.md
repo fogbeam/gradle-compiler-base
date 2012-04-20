@@ -13,11 +13,10 @@ figure out how this plugin works.  If you need help figuring it out or would lik
 
 Add the following lines to your plugins' `build.gradle` script:
 
-		repositories {
-			mavenRepo url:'http://repo.smokejumperit.com'
-		}
+		apply plugin:'http://smokejumperit.com/github-libs.gradle'
+
 		dependencies {
-			classpath 'com.smokejumperit.gradle.compiler:base:0.0.4'
+			classpath 'RobertFischer:gradle-compiler-base:0.0.4'
 		}
 
 ## Changelog
