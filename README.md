@@ -6,7 +6,6 @@ figure out how this plugin works.  If you need help figuring it out or would lik
 
 ## Known Uses
 
-* [Mirah](http://github.com/RobertFischer/Gradle-Mirah-Compiler)
 * [JavaCC/JJTree](http://github.com/RobertFischer/Gradle-Javacc-Plugin) 
 
 ## Installation
