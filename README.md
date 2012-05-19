@@ -22,7 +22,7 @@ Add the following lines to your plugins' `build.gradle` script:
 
 ### 0.0.5
 
-* Developed support for generators like the JavaCC plugin.
+* Developed support for code generators like JavaCC.
 
 ### 0.0.4
 
