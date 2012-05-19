@@ -15,10 +15,14 @@ Add the following lines to your plugins' `build.gradle` script:
 		apply plugin:'http://smokejumperit.com/github-libs.gradle'
 
 		dependencies {
-			classpath 'RobertFischer:gradle-compiler-base:0.0.4'
+			classpath 'RobertFischer:gradle-compiler-base:0.0.5'
 		}
 
 ## Changelog
+
+### 0.0.5
+
+* Developed support for generators like the JavaCC plugin.
 
 ### 0.0.4
 

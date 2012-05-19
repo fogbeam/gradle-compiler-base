@@ -3,7 +3,7 @@ apply plugin:'groovy'
 apply plugin:'maven'
 
 group = 'RobertFischer'
-version = '0.0.5-SNAPSHOT'
+version = '0.0.5'
 
 apply from:'http://smokejumperit.com/repo.gradle'
 apply from:'http://smokejumperit.com/github-dev.gradle'
