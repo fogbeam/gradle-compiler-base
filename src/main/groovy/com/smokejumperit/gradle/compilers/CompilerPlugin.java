@@ -13,6 +13,7 @@ import org.gradle.util.*;
 import org.gradle.api.artifacts.Configuration;
 import java.util.*;
 import java.io.*;
+import java.util.concurrent.atomic.AtomicReference;
 import static com.smokejumperit.gradle.compilers.CompilerPluginHelper.*;
 
 public abstract class CompilerPlugin<COMPILE_TYPE extends AbstractCompile> implements Plugin<Project> {
@@ -80,14 +81,19 @@ public abstract class CompilerPlugin<COMPILE_TYPE extends AbstractCompile> imple
 	protected boolean dependsOnCompileJava() { return true; }
 
 	protected void configureSourceSetsDefaults(final Project project, final JavaBasePlugin javaPlugin) {
-		final CompilerPlugin me = this;
+		final CompilerPlugin<COMPILE_TYPE> me = this;
 		final String name = getName();
+
 		getJavaPluginConvention(project).getSourceSets().all(new Action<SourceSet>() {
 			public void execute(SourceSet ss) {
-				final CompilerSourceSet css = applyConvention(ss, name, createCompilerSourceSet(me, project, getDisplayName(ss)));
-				css.getCompilerSourceDirSet().srcDir(project.file("src/" + ss.getName() + "/" + name));
+				final CompilerSourceSet css = applyConvention(ss, name, new CompilerSourceSet(me, project, ss));
 				ss.getAllJava().source(css.getCompilerSourceDirSet());
 				ss.getAllSource().source(css.getCompilerSourceDirSet());
+				ss.getResources().getFilter().exclude(new Spec<FileTreeElement>() {
+					public boolean isSatisfiedBy(FileTreeElement elt) {
+						return css.getCompilerSourceDirSet().contains(elt.getFile());
+					}
+				});
 
 				final String taskName = ss.getCompileTaskName(name);
 				final COMPILE_TYPE compile = project.getTasks().add(taskName, getCompileTaskClass());
@@ -95,21 +101,6 @@ public abstract class CompilerPlugin<COMPILE_TYPE extends AbstractCompile> imple
 				javaPlugin.configureForSourceSet(ss, compile);
 				compile.setDescription("Compiles the " + css.getCompilerSourceDirSet() + ".");
 				compile.source(css.getCompilerSourceDirSet());
-				compile.include(new Spec<FileTreeElement>() {
-					public boolean isSatisfiedBy(FileTreeElement file) {
-						if(file.isDirectory()) return false;
-						for(String suffix : getLanguageFileSuffixes()) {
-							if(file.getName().endsWith(suffix)) return true;
-						}
-						return false;
-					}
-				});
-
-				ss.getResources().getFilter().exclude(new Spec<FileTreeElement>() {
-					public boolean isSatisfiedBy(FileTreeElement elt) {
-						return compile.getSource().contains(elt.getFile());
-					}
-				});
 
 				project.getTasks().getAt(ss.getClassesTaskName()).dependsOn(taskName);
 

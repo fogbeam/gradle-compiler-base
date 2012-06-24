@@ -21,3 +21,7 @@ dependencies {
   compile gradleApi()
 }
 
+tasks.withType(AbstractCompile).all { AbstractCompile compile ->
+	compile.options.debug = true
+	compile.options.compilerArgs = ['-Xlint:all']
+}
