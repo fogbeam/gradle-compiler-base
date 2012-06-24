@@ -18,11 +18,6 @@ class CompilerPluginHelper {
 		return css
 	}
 
-	static class CompilerSourceSet {
-		String name
-		SourceDirectorySet compilerSourceDirSet, allSourceDirSet
-	}
-
 	static CompilerSourceSet createCompilerSourceSet(CompilerPlugin compilerPlugin, Project project, String sourceSetName) {
 		final String name = compilerPlugin.name
 		final String capName = "${name[0].toUpperCase()}${name[1..-1]}"
@@ -31,11 +26,12 @@ class CompilerPluginHelper {
 			import org.gradle.api.file.*
 			import org.gradle.api.internal.file.*
 			import org.gradle.util.*
+			import com.smokejumperit.gradle.compilers.CompilerSourceSet
 
 			class ${capName}SourceSet extends CompilerSourceSet {
 
 				${capName}SourceSet() {
-					name = "${lowName}"
+					super("${lowName}")
 
 					def fileResolver = y.fileResolver
 		

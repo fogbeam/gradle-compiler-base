@@ -45,4 +45,6 @@ public abstract class GeneratorPlugin<GENERATOR_TYPE extends AbstractGenerator>
 		};
 	}
 
+	public abstract String getCompilesToLanguage();
+
 }
