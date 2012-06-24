@@ -16,6 +16,10 @@ public abstract class CompilerSourceSet {
 		return compilerSourceDirSet;
 	}
 
+	public SourceDirectorySet getAllSourceDirSet() {
+		return allSourceDirSet;
+	}
+
 }
 
 

@@ -13,36 +13,23 @@ import org.gradle.util.*;
 import org.gradle.api.artifacts.Configuration;
 import java.util.*;
 import java.io.*;
-import static com.smokejumperit.gradle.compilers.GeneratorPluginHelper.*;
 
 public abstract class GeneratorPlugin<GENERATOR_TYPE extends AbstractGenerator> 
 	extends CompilerPlugin<GENERATOR_TYPE> implements Plugin<Project> 
 {
 
-	@Override 
-	public void apply(Project project) {
-		project.getTasks().withType(AbstractGenerator.class).all(getAttachCopyAction()); 
-		super.apply(project);
-	}
+	@Override
+	protected boolean dependsOnCompileJava() { return false; }
 
-	protected Action<AbstractGenerator> getAttachCopyAction() {
-		return new Action<AbstractGenerator>() {
-			public void execute(final AbstractGenerator generator) {
-				generator.getLogger().info("Adding the copy action to " + generator);
-				generator.doLast(getExecuteCopyAction(generator));
-			}
-		};
-	}
-
-	protected <T extends Task> Action<T> getExecuteCopyAction(final AbstractGenerator generator) {
-		return new Action<T>() {
-			public void execute(T task) {
-				copyGeneratedFiles(
-					generator.getProject(), getAdditionalConsumedFileSuffixes(), 
-					generator.getSource(), generator.getDestinationDir()
-				);
-			}
-		};
+	@Override
+	public void postConfig(GENERATOR_TYPE generatorTask, SourceSet sourceSet, Project project) {
+		File genDir = new File(project.getBuildDir(), getName() + "/" + sourceSet.getName() + "/" + getCompilesToLanguage() + "-gen");
+		generatorTask.setDestinationDir(genDir);
+		AbstractCompile compileTask = 
+			project.getTasks().withType(AbstractCompile.class).getByName(sourceSet.getCompileTaskName(getCompilesToLanguage()));
+		compileTask.dependsOn(generatorTask);
+		compileTask.source(genDir);
+		super.postConfig(generatorTask, sourceSet, project);
 	}
 
 	public abstract String getCompilesToLanguage();

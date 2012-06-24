@@ -74,6 +74,11 @@ public abstract class CompilerPlugin<COMPILE_TYPE extends AbstractCompile> imple
 		}
 	}
 
+	/**
+	* Whether this compiler depends on the {@code compileJava} task. Defaults to {@code true}.
+	*/
+	protected boolean dependsOnCompileJava() { return true; }
+
 	protected void configureSourceSetsDefaults(final Project project, final JavaBasePlugin javaPlugin) {
 		final CompilerPlugin me = this;
 		final String name = getName();
@@ -83,18 +88,28 @@ public abstract class CompilerPlugin<COMPILE_TYPE extends AbstractCompile> imple
 				css.getCompilerSourceDirSet().srcDir(project.file("src/" + ss.getName() + "/" + name));
 				ss.getAllJava().source(css.getCompilerSourceDirSet());
 				ss.getAllSource().source(css.getCompilerSourceDirSet());
-				ss.getResources().getFilter().exclude(new Spec<FileTreeElement>() {
-					public boolean isSatisfiedBy(FileTreeElement elt) {
-						return css.getCompilerSourceDirSet().contains(elt.getFile());
-					}
-				});
 
 				final String taskName = ss.getCompileTaskName(name);
-				COMPILE_TYPE compile = project.getTasks().add(taskName, getCompileTaskClass());
-				compile.dependsOn(ss.getCompileJavaTaskName());
+				final COMPILE_TYPE compile = project.getTasks().add(taskName, getCompileTaskClass());
+				if(dependsOnCompileJava()) compile.dependsOn(ss.getCompileJavaTaskName());
 				javaPlugin.configureForSourceSet(ss, compile);
 				compile.setDescription("Compiles the " + css.getCompilerSourceDirSet() + ".");
 				compile.source(css.getCompilerSourceDirSet());
+				compile.include(new Spec<FileTreeElement>() {
+					public boolean isSatisfiedBy(FileTreeElement file) {
+						if(file.isDirectory()) return false;
+						for(String suffix : getLanguageFileSuffixes()) {
+							if(file.getName().endsWith(suffix)) return true;
+						}
+						return false;
+					}
+				});
+
+				ss.getResources().getFilter().exclude(new Spec<FileTreeElement>() {
+					public boolean isSatisfiedBy(FileTreeElement elt) {
+						return compile.getSource().contains(elt.getFile());
+					}
+				});
 
 				project.getTasks().getAt(ss.getClassesTaskName()).dependsOn(taskName);
 
