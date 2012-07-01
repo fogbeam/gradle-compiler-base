@@ -29,6 +29,7 @@ public abstract class GeneratorPlugin<GENERATOR_TYPE extends AbstractGenerator>
 			project.getTasks().withType(AbstractCompile.class).getByName(sourceSet.getCompileTaskName(getCompilesToLanguage()));
 		compileTask.dependsOn(generatorTask);
 		compileTask.source(genDir);
+		compileTask.source(generatorTask.inputs.files.collect({ it.isDirectory() ? it : it.parentFile }) as Set)
 		super.postConfig(generatorTask, sourceSet, project);
 	}
 
